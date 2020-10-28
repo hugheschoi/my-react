@@ -1,7 +1,6 @@
-import Component from './Components'
 /**
  * 
- * @param {*} type 元素的类型, 看可能是一个字符串（原生），也可能是一个函数（组件）
+ * @param {*} type 元素的类型
  * @param {*} config  配置的对象，一般来说就是属性对象
  * @param {*} children 儿子元素 可能很多 Array.prototype.slice.call(arguments, 2)
  */
@@ -28,7 +27,6 @@ function createElement (type, config, children) {
 }
 
 let React = {
-  createElement,
-  Component
+  createElement
 }
 export default React

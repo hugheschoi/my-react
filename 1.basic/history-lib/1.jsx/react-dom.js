@@ -18,17 +18,7 @@ function createDOM(vdom) {
   if (!vdom) return ''
   // 否则是一个react元素
   let {type, props} = vdom
-  let dom
-  // 
-  if (typeof type === 'function') {
-    if (type.isReactComponent) {
-      // 说明是类组件的虚拟dom元素
-      return updateClassComponent(vdom)
-    }
-    return updateFunctionComponent(vdom)
-  } else {
-    dom = document.createElement(type)
-  }
+  let dom = document.createElement(type)
   updateProps(dom, props) // 更新属性
   // 处理子节点
   if (typeof vdom.props.children === 'string' || typeof vdom.props.children === 'number' ) {
@@ -41,28 +31,6 @@ function createDOM(vdom) {
   } else { // 其他意外情况
     dom.textContent = props.children ?  props.children.toString() : ''
   }
-  return dom
-}
-/**
- * 函数组件，得到真实dom
- * @param {*} vdom 函数组件的虚拟dom React元素
- */
-function updateFunctionComponent (vdom) {
-  let { type, props } = vdom
-  let renderVdom = type(props)
-  return createDOM(renderVdom)
-}
-/**
- * 类组件，得到真实dom
- * 1. 
- * @param {*} vdom 类组件的虚拟dom React元素
- */
-function updateClassComponent (vdom) {
-  let { type, props } = vdom
-  let classInstance =  new type(props)
-  let renderVdom = classInstance.render()
-  const dom = createDOM(renderVdom)
-  classInstance.dom = dom // 让类组件实例上挂一个dom，指向类组件的实例的真实dom，setState会用到
   return dom
 }
 
