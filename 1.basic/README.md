@@ -420,3 +420,157 @@ function updateClassComponent (vdom) {
   return dom
 }
 ```
+
+## 状态
+
+### 使用
+
+```react
+import React from 'react';
+import ReactDOM from 'react-dom';
+let root = document.getElementById('root');
+
+class Clock extends React.Component{
+  constructor(props){
+    super(props)
+    this.state = {
+      date: new Date()
+    }
+    setInterval(this.tick,1000)
+  }
+  tick = () => {
+    this.setState({
+      date: new Date()
+    })
+  }
+  render () {
+    return (
+    	<div>
+        <h1>hello</h1>
+        <h2>当前时间： {this.state.date.toLocaleTimeString()}</h2>
+      </div>
+    )
+  }
+}
+
+ReactDOM.render(<Clock/>, root>
+                
+```
+
+```react
+import React from 'react';
+import ReactDOM from 'react-dom';
+let root = document.getElementById('root');
+
+/**
+ * 当你在事件处理函数中执行setState,组件并不会立刻渲染,而是先把更新存起来,等事件处理函数执行完了再会批量更新（执行完，你取的值才会变）
+ */
+
+class Counter extends React.Component{
+  constructor (props) {
+    super(props)
+    this.state = {
+      number: 0,
+      name: 'xxx' // 当你调用 setState() 的时候，React 会把你提供的对象合并到当前的 state, Object.assign或扩展运算符 只改number不会删掉你name
+    }
+  }
+  handleClick = () => {
+    this.setState({ number: this.state.number + 1 })
+    console.log(this.state.number) // 0
+    this.setState({ number: this.state.number + 1 }, () => {
+      console.log('x', this.state.number) // x 1
+    })
+    console.log(this.state.number) // 0
+    // render的结果是1
+  }
+  handleClick1 = () => {
+    // setState可以放函数, 函数的参数是上一个的状态state
+    this.setState((state) => ({ number: state.number + 1 }), () => {
+      console.log('x', this.state.number) // 2 setState第二个参数是回调，可以拿到最后更新的state
+    })
+    console.log(this.state.number) // 0
+    this.setState((state) => ({ number: state.number + 1 }))
+    console.log(this.state.number) // 0
+    // render的结果是2
+  }
+  render(){
+    return (
+        <div>
+            <h1>{ this.state.number }</h1> // 1
+            <button onClick={this.handleClick}>+</button>
+        </div>
+    )
+  }
+}
+let element = <Counter />
+ReactDOM.render(element, root)
+
+```
+
+ ** 当你在事件处理函数中执行setState,组件并不会立刻渲染,而是先把更新存起来,等事件处理函数执行完了再会批量更新（执行完，你取的值才会变）*
+
+ ** 1.在事件处理函数中或生命周期函数中批量更新的 异步的*
+
+ ** 2.其它地方都是直接同步更新的,比如说setTimeout*
+
+#### 事件处理
+
+ * .要谨慎处理this问题*
+
+ **    1.用箭头函数 首选方案*
+
+```js
+handleClick = () => {} // 高级语法 es7
+```
+
+ **    2.如果不使用箭头函数,普通函数中的this=undefined,可在render使用匿名函数*
+
+```react
+render(){
+    return (
+        <div>
+            <h1>{ this.state.number }</h1>
+            <button onClick={this.handleClick}>+</button>
+            <button onClick={() => this.handleReduce()>-</button>
+        </div>
+    )
+  }
+```
+
+
+
+ **    3.可以在构造函数中重写this.handleClick,绑死this指针*
+
+```js
+constructor (props) {
+  super(props)
+  this.handleClick1 = this.handleClick1.bind(this)
+}
+```
+
+
+
+ **    4.如何要传参数,只能使用匿名函数*
+
+```react
+render(){
+    return (
+        <div>
+            <h1>{ this.state.number }</h1>
+            <button onClick={this.handleClick}>+</button>
+            <button onClick={() => this.handleReduce(3)}>-</button>
+        </div>
+    )
+  }
+```
+
+** 5. render中bind，性能不好
+
+```react
+<button onClick={this.handleClick.bind(this,3)}>+</button>
+```
+
+
+
+### setState的实现
+

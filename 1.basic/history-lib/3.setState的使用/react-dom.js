@@ -11,7 +11,7 @@ function render (vdom, container) {
  * 虚拟dom转换成真实dom
  * @param {*} vdom null 数字 字符串 react元素
  */
-export function createDOM(vdom) {
+function createDOM(vdom) {
   if (typeof vdom === 'string' || typeof vdom === 'number') {
     return document.createTextNode(vdom)
   }
@@ -71,18 +71,16 @@ function updateClassComponent (vdom) {
  * @param {*} dom dom
  * @param {*} props 属性对象
  */
-function updateProps (dom, newProps) {
-  for (let key in newProps) {
+function updateProps (dom, props) {
+  for (let key in props) {
     if (key === 'children') continue
     if (key === 'style') {
-      let styleObj = newProps[key]
+      let styleObj = props[key]
       for (let key in styleObj) {
         dom.style[key] = styleObj[key] // dom.style.color = 'red
       }
-    } else if (key.startsWith('on')) {
-      dom[key.toLocaleLowerCase()] = newProps[key]
     } else {
-      dom[key] = newProps[key] // dom.className = 'title'
+      dom[key] = props[key] // dom.className = 'title'
     }
   }
 }

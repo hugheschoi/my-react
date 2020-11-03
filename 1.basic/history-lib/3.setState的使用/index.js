@@ -1,5 +1,5 @@
-import React from './react';
-import ReactDOM from './react-dom';
+import React from 'react';
+import ReactDOM from 'react-dom';
 let root = document.getElementById('root');
 
 /**
@@ -20,29 +20,43 @@ class Counter extends React.Component{
       number: 0,
       name: 'xxx' // 当你调用 setState() 的时候，React 会把你提供的对象合并到当前的 state, Object.assign或扩展运算符 只改number不会删掉你name
     }
+    this.handleClick1 = this.handleClick1.bind(this)
   }
   handleClick = () => {
     this.setState({ number: this.state.number + 1 })
     console.log(this.state.number) // 0
-    this.setState({ number: this.state.number + 1 })
+    this.setState({ number: this.state.number + 1 }, () => {
+      console.log('x', this.state.number) // x 1
+    })
     console.log(this.state.number) // 0
-    // setTimeout(() => {
-    //   this.setState({ number: this.state.number + 1 })
-    //   console.log(this.state.number) // 0
-    //   this.setState({ number: this.state.number + 1 })
-    //   console.log(this.state.number) // 0
-    // })
-    // this.setState({ number: this.state.number + 1 }, () => {
-    //   console.log('x', this.state.number) // x 1
-    // })
-    // console.log(this.state.number) // 0
     // render的结果是1
   }
+  handleClick1 () {
+    // setState可以放函数, 函数的参数是上一个的状态state
+    this.setState((state) => ({ number: state.number + 1 }), () => {
+      console.log('x', this.state.number) // 2 setState第二个参数是回调，可以拿到最后更新的state
+    })
+    console.log(this.state.number) // 0
+    this.setState((state) => ({ number: state.number + 1 }))
+    console.log(this.state.number) // 0
+    // render的结果是2
+  }
+  handleReduce(){
+    console.log('handleReduce')
+    this.setState({ number: this.state.number - 1 })
+  }
+
+  handleTest (key) {
+    console.log(key)
+  }
+
   render(){
     return (
         <div>
             <h1>{ this.state.number }</h1>
-            <button onClick={this.handleClick}>+</button>
+            <button onClick={this.handleClick1}>+</button>
+            <button onClick={() => this.handleReduce()}>-</button>
+            <button onClick={() => this.handleTest('test')}>test</button>
         </div>
     )
   }
