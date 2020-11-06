@@ -12,12 +12,9 @@ import Component from './Components'
 //   }
 // }, React.createElement("span", null, "hello"), "world");
 function createElement (type, config, children) {
-  let ref
   if (config) {
     delete config._owner
     delete config._store
-    ref = config.ref
-    delete config.ref
   }
   let props = {...config}
   if (arguments.length > 3) {
@@ -26,17 +23,12 @@ function createElement (type, config, children) {
   // children 可能是很多类型的元素，数组、字符 number null
   props.children = children
   return {
-    type, props, ref
+    type, props
   }
-}
-
-function createRef() {
-  return { current: null }
 }
 
 let React = {
   createElement,
-  Component,
-  createRef
+  Component
 }
 export default React

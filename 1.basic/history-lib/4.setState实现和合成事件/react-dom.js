@@ -21,7 +21,7 @@ export function createDOM(vdom){
         return '';
     }
     //否则就是一个React元素
-    let {type,props,ref} = vdom;
+    let {type,props} = vdom;
     let dom;
     //如果是一个组件的话,还要区分到底是类组件还是函数组件
     if(typeof type === 'function'){
@@ -45,9 +45,6 @@ export function createDOM(vdom){
         reconcileChildren(props.children,dom);
     }else{//如果出现了其它的意外情况 null就是空串
         dom.textContent = props.children?props.children.toString():'';
-    }
-    if (ref) {
-        ref.current = dom
     }
     return dom;
 }
