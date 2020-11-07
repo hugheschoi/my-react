@@ -632,3 +632,20 @@ ReactDOM.render(<Sum/>,root);
 
 
 
+### 生命周期
+
+```mermaid
+graph TB
+初始化阶段 --> 设置props和state
+Mounting阶段 --> componentWillMount --> render[render] --> componentDidMount
+B["fa:fa-twitter Updation更新阶段"]
+      B-->C[fa:fa-ban props] --> componentWilllReceiveProps --> shouUpdate1[shouldComponentUpdate] --> |true|willUpdate[componentWillUpdate] --> render1[render] --> didUpdate1[componentDidUpdate]
+      B-->E(fa:fa-camerra-retro states) --> shouUpdate2[shouldComponentUpdate] --> |true|willUpdate2[componentWillUpdate] --> render3[render] --> didUpdate2[componentDidUpdate]
+
+Unmounting阶段 --> componentWillUnmount
+```
+
+
+
+
+
