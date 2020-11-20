@@ -30,7 +30,7 @@ class Updater{
         updateQueue.isBatchingUpdate?updateQueue.add(this):this.updateComponent();
     }
     updateComponent(){//开始真正用pendingStates更新状态this.state
-        let {classInstance,pendingStates}=this;
+        let {classInstance, pendingStates}=this;
         if(pendingStates.length>0){
             //组件的老状态和数组中的新状态合并后得到最后的新状态
             classInstance.state = this.getState();

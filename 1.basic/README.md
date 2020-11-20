@@ -574,9 +574,85 @@ render(){
 
 ### setState的实现
 
+我们知道setState在react的方法中都是异步更新（除非你放到setTimeout），这是因为批量更新的原理，setState有回调函数，参数则是state上一个的状态值。这里用了发布订阅的模式去实现异步更新。
+
+实际上，setState是React.Component里的一个方法。类组件继承了React.Component, 所以可以使用setState， 在初始化React.Componen时会配一个更新器，当一次setState的时候就用 this.updater.addState，如果是批量更新，会存起来到把这个更新器存到更新队列中去，没有的话直接执行组件更新。更新队列，会将来在事件合成中批量的调用，依次执行更新器的updateComponent的方法
+
+```js
+class Component {
+  constructor (props) {
+    this.props = props
+    this.state = {}
+    this.updater = new Updater(this)  // 给component实例创建一个监听器
+  }
+}
+
+
+export default Component
+// react.js
+let React = {
+  createElement,
+  Component
+}
+export default React
+```
+
+监听器里存放实例classInstance，组件实例有state和forceUpdate强制更新的方法， 监听器有两个方法addstate和updateComponent的方法，当异步更新时，更新队列会把更新器存起来，发布订阅，将来在事件触发时依次执行更新器的updateComponent的方法，并清空队列。
+
+```react
+let updateQueue = {
+  updaters:new Set(),//更新器的数组
+  isBatchingUpdate:false,//标志 是否处于批量更新模式 默认是非批量更新
+  add(updater){//增加一个更新器
+    this.updaters.add(updater);
+  },
+  batchUpdate(){//强制批量实现组件更新
+    this.updaters.forEach(updater=>updater.updateComponent())
+    this.isBatchingUpdate = false;
+    this.updaters.clear()
+  }
+}
+class Updater {
+  construtor (classInstance) {
+    this.classInstance = classInstance
+    this.pendingStates = []
+  }
+  addState (partialState) {
+    this.pendingStates.push(partialState);
+    updateQueue.isBatchingUpdate?updateQueue.add(this):this.updateComponent();
+  }
+  updateComponent () {
+    let {classInstance, pendingStates}=this;
+    if(pendingStates.length>0){
+      //组件的老状态和数组中的新状态合并后得到最后的新状态
+      classInstance.state = this.getState();
+      classInstance.forceUpdate();//让组件强行更新
+    }
+  }
+  getState(){//根据老状态和等待生效的新状态,得到最后新状态
+    let {classInstance,pendingStates}=this;
+    let {state} = classInstance;//counter.state 
+    if(pendingStates.length>0){//说明有等待更新的状态
+      pendingStates.forEach(nextState=>{
+        if(isFunction(nextState)){//如果函数的话
+          nextState = nextState(state);
+        }
+        state = {...state,...nextState};//用新状态覆盖老状态
+      });
+      pendingStates.length=0;
+    }
+    return state;
+  }
+}
+```
+
+
+
 #### 同步更新
 
 #### 异步更新
+
+总而言之， 每个类组件react元素实例，都有有一个更新器updater, 当setState时，updater就addState，存放着state，异步更新的情况下，会被更新队列存起来，将来在事件触发后，依次执行（发布订阅）
 
 #### 合成事件
 
@@ -632,7 +708,9 @@ ReactDOM.render(<Sum/>,root);
 
 
 
-### 生命周期
+
+
+### 老的生命周期
 
 ```mermaid
 graph TB
@@ -647,5 +725,92 @@ Unmounting阶段 --> componentWillUnmount
 
 
 
+```react
+shouldComponentUpdate(nextProps,nextState){ // 返回boolean值
+  console.log('父组件 5.shouldComponentUpdate');
+  return nextState.number%2===0;//如果是偶数就true更新 奇数不更新
+}
+```
 
+子组件componentDidMount 和 componentDidUpdate 会比父组件的先触发
+
+ react实现生命周期的过程？
+
+类组件先创建类的实例 ，pdateClassCompnent -> 如果有  componentWillMount
+
+凡是带will的生命周期都在新版被干掉了
+
+willRP：会触发多次，在里面写setState可能出现死循环（父组件刷新、或者传入的值也更新）
+
+willMount： fiber组件的挂在和更新是可以被打断的，可以暂停，开始，暂停， 这样willMount会触发多次，所以被干掉
+
+willUpdate： 和willMount同理
+
+
+
+### DOM-DIFF
+
+react为了优化性能，有个约定：
+
+1. 一层层比，不会去跨层级去比较
+
+```js
+export function compareTwoVdom(parentDOM,oldVdom,newVdom,nextDOM){
+   //如果老的是null新的也是null
+  if(!oldVdom && !newVdom){
+    return null;
+  //如果老有,新没有,意味着此节点被删除了  
+  }else if(oldVdom&&!newVdom){
+    let currentDOM = oldVdom.dom;//span
+    parentDOM.removeChild(currentDOM);
+    if(oldVdom.classInstance&&oldVdom.classInstance.componentWillUnmount){
+        oldVdom.classInstance.componentWillUnmount();
+    }
+    return null;
+  //如果说老没有,新的有,新建DOM节点  
+  }else if(!oldVdom && newVdom){
+    let newDOM = createDOM(newVdom);//创建一个新的真实DOM并且挂载到父节点DOM上
+    newVdom.dom = newDOM;
+    if(nextDOM){//如果有下一个弟弟DOM的话,插到弟弟前面 p child-counter button
+        parentDOM.insertBefore(newDOM,nextDOM);
+    }else{
+        parentDOM.appendChild(newDOM);
+    }
+    return newVdom;
+  }else{//新节点和老节点都有值
+    updateElement(oldVdom,newVdom);
+    return newVdom;
+  }
+}
+/**
+ * DOM-DIFF的时候,React为了优化性能有一些假设条件
+ * 1.不考虑跨层移动的情况
+ * 进入深度比较
+ * @param {*} oldVdom 老的虚拟DOM
+ * @param {*} newVdom 新的虚拟DOM
+ */
+function updateElement(oldVdom,newVdom){
+    //如果走到这个,则意味着我们要复用老的DOM节点了
+  let currentDOM = newVdom.dom = oldVdom.dom;//获取 老的真实DOM
+  newVdom.classInstance = oldVdom.classInstance;
+  if(typeof oldVdom.type === 'string'){//原生的DOM类型 div span p
+    updateProps(currentDOM,oldVdom.props,newVdom.props);
+    updateChildren(currentDOM,oldVdom.props.children,newVdom.props.children);
+  }else if(typeof oldVdom.type === 'function'){//就是类组件了
+    updateClassInstance(oldVdom,newVdom);
+  }
+}
+```
+
+#### getDerivedStateFromProps
+
+- tatic getDerivedStateFromProps(props, state) 这个生命周期的功能实际上就是将传入的props映射到state上面
+
+#### getSnapshotBeforeUpdate
+
+- getSnapshotBeforeUpdate() 被调用于render之后，可以读取但无法使用DOM的时候。它使您的组件可以在可能更改之前从DOM捕获一些信息（例如滚动位置）。此生命周期返回的任何值都将作为参数传递给componentDidUpdate()
+
+
+
+![Alt](http://img.zhufengpeixun.cn/react16.jpg)
 

@@ -30,3 +30,24 @@ class Sum extends React.Component{
     }
 }
 ReactDOM.render(<Sum/>,root);
+
+
+
+
+function solution (arr) {
+  const map = {}
+  const res = []
+  for (var i = 0; i < arr.length; i++) {
+    if (map[arr[i]] !== undefined) {
+      res.push(arr[i])
+    } else {
+      map[arr[i]] = true
+    }
+  }
+  return res
+}
+
+
+
+
+
